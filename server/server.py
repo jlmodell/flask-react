@@ -11,8 +11,8 @@ from planning import planning
 
 load_dotenv(os.path.join(os.getcwd(), ".env"))
 
-app = Flask(__name__, static_folder="../frontend/build",
-            template_folder="../frontend/build")
+app = Flask(__name__, static_folder="./frontend/build",
+            template_folder="./frontend/build")
 
 path_to_upload = os.path.join(os.getcwd(), "uploads")
 
