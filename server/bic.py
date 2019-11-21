@@ -164,6 +164,7 @@ def bic_updater(po, bic_path_to_excel, path_to_excel, save_path):
 
     xl_app = wb.app
     xl_app.macro("copy_to_schedule")()
+    xl_app.macro("rebuild_lots_list")()
 
     ''' build file name for updated bic '''
 
