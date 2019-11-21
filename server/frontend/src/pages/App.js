@@ -13,6 +13,7 @@ import {
 import { Link, Router } from "@reach/router";
 import { HelenFile, HelenSuccess } from "./Helen";
 import { Bic, BicSuccess } from "./Bic";
+import { Idle, IdleSuccess } from "./Idle";
 import { Planning, PlanningSuccess } from "./Planning";
 
 const drawerWidth = 240;
@@ -21,6 +22,7 @@ export const App = () => {
   const classes = useStyles();
   const drawerItems = [
     { text: "Home", link: "/" },
+    { text: "Idle Cost Calculator", link: "idle" },
     { text: "Helen 6417R1 File", link: "helen" },
     { text: "BIC Form Packer", link: "bic" },
     { text: "Heber Planning Function", link: "planning" }
@@ -66,6 +68,8 @@ export const App = () => {
           <Home path="/" />
           <HelenFile path="helen" />
           <HelenSuccess path="helen_success" />
+          <Idle path="idle" />
+          <IdleSuccess path="idle_success" />
           <Bic path="bic" />
           <BicSuccess path="bic_success" />
           <Planning path="planning" />

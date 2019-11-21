@@ -9,6 +9,7 @@ import datetime
 from helen import helen_file
 from bic import bic, bic_updater
 from planning import planning
+from idle import idle
 
 load_dotenv(os.path.join(os.getcwd(), ".env"))
 
@@ -205,6 +206,56 @@ def api_planning():
 
         return jsonify({"result": excel_filename, "html": df.to_html()})
     return jsonify({"result": "api_planning_as_GET"})
+
+
+'''
+Idle Report
+'''
+
+
+@app.route("/api/idle", methods=["GET", "POST"])
+def api_idle():
+    if request.method == "POST":
+        if 'file' in request.files:
+            file = request.files['file']
+            file_name = secure_filename(file.filename)
+            path_to_file = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+            file.save(path_to_file)
+
+        today = datetime.datetime.now()
+        timestamp = today.strftime("%Y%m%d%H%M%S")
+
+        excel_filename = secure_filename(f'Idle Cost Report {timestamp}.xlsx')
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], excel_filename)
+
+        wage = request.form['wage'] if request.form['wage'] else "13.00"
+
+        df = idle(path_to_file, wage)
+        df.to_excel(save_path)
+
+        sumOfIdleCost = 0 if df['idle_time_dollars'].sum(
+        ) >= 0 else df['idle_time_dollars'].sum()
+        projAnnualCost = sumOfIdleCost * 4 * 50
+
+        if request.form['email']:
+            msg = Message(excel_filename.split(
+                ".")[0], recipients=request.form['email'].split(","))
+            msg.html = df.to_html()
+
+            with app.open_resource(save_path) as fp:
+                msg.attach(
+                    excel_filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', fp.read())
+
+                mail.send(msg)
+
+        return jsonify({"result": excel_filename, "html": df.to_html(), "sum_idle": sumOfIdleCost, "proj_annual": projAnnualCost})
+
+    return jsonify({"result": "api_idle_as_GET"})
+
+
+"""
+download route
+"""
 
 
 @app.route("/download/<filename>")
