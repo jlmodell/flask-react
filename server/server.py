@@ -128,7 +128,7 @@ def api_bic():
         timestamp = bic_today.strftime("%Y%m%d%H%M%S")
 
         """ Logic Check to see if updating file or creating a new file """
-        if request.files['bicFile']:
+        if 'bicFile' in request.files:
             bicFile = request.files['bicFile']
             bic_file_name = secure_filename("updated " + bicFile.filename)
             bic_path_to_excel = os.path.join(

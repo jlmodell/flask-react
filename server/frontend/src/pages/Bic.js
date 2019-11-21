@@ -32,14 +32,18 @@ export const Bic = () => {
 
     let formData = new FormData();
 
-    let xlFile = document.querySelector("#file");
-    let bicXlFile = document.querySelector("#bicFile");
-
     formData.set("date", date);
     formData.set("po", po);
     formData.set("email", email);
-    formData.append("file", xlFile.files[0]);
-    formData.append("bicFile", bicXlFile.files[0]);
+    if (file) {
+      let xlFile = document.querySelector("#file");
+      formData.append("file", xlFile.files[0]);
+    }
+
+    if (bicFile) {
+      let bicXlFile = document.querySelector("#bicFile");
+      formData.append("bicFile", bicXlFile.files[0]);
+    }
 
     let config = {
       headers: {
@@ -130,7 +134,6 @@ export const Bic = () => {
           onChange={e => setEmail(e.target.value)}
           variant="outlined"
           label="Email (optional) - separate with commas "
-          required={true}
           InputLabelProps={{ shrink: true }}
           fullWidth
           margin="normal"
