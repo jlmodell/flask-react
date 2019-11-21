@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, render_template, send_from_directory, request, jsonify
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
@@ -10,6 +11,8 @@ from bic import bic, bic_updater
 from planning import planning
 
 load_dotenv(os.path.join(os.getcwd(), ".env"))
+
+port = 5000 if sys.argv[1] == "dev" else 3000
 
 app = Flask(__name__, static_folder="./frontend/build",
             template_folder="./frontend/build")
@@ -211,4 +214,4 @@ def download(filename):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", use_reloader=True,
-            port=5000, threaded=True, debug=True)
+            port=port, threaded=True, debug=True)
