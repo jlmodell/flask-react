@@ -50,8 +50,6 @@ month_dict = {
     "12": "December"
 }
 
-bic_today = datetime.datetime.now()
-
 """
 Helper END
 """
@@ -123,6 +121,7 @@ def api_bic():
 
         """ various file names """
 
+        bic_today = datetime.datetime.now()
         timestamp = bic_today.strftime("%Y%m%d%H%M%S")
 
         """ Logic Check to see if updating file or creating a new file """
@@ -180,7 +179,8 @@ def api_planning():
 
         df = planning(path_to_file)
 
-        timestamp = bic_today.strftime("%Y%m%d%H%M%S")
+        today = datetime.datetime.now()
+        timestamp = today.strftime("%Y%m%d%H%M%S")
 
         excel_filename = secure_filename(f'Planning {timestamp}.xlsx')
 
@@ -210,4 +210,5 @@ def download(filename):
 
 
 if __name__ == "__main__":
-    app.run(use_reloader=True, port=5000, threaded=True, debug=True)
+    app.run(host="0.0.0.0", use_reloader=True,
+            port=3000, threaded=True, debug=True)
