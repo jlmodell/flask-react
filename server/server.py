@@ -111,13 +111,16 @@ def api_helen_file():
 
 @app.route("/api/bic", methods=["GET", "POST"])
 def api_bic():
+    bic_today = datetime.datetime.now()
+    timestamp = bic_today.strftime("%Y%m%d%H%M%S")
+
     if request.method == "POST":
         date = request.form['date']
         date = str(date).replace("-", "")
         po = request.form['po']
 
         file = request.files['file']
-        file_name = secure_filename(file.filename)
+        file_name = secure_filename(f"release schedule {timestamp}.xls")
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], file_name))
 
         path_to_excel = os.path.join(
