@@ -13,7 +13,7 @@ from idle import idle
 
 load_dotenv(os.path.join(os.getcwd(), ".env"))
 
-port = 5000 if sys.argv[1] == "dev" else 3000
+port = 5000 if sys.argv[1] == "dev" else 3636
 
 app = Flask(__name__, static_folder="./frontend/build",
             template_folder="./frontend/build")
