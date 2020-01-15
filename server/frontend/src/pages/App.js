@@ -15,6 +15,7 @@ import { HelenFile, HelenSuccess } from "./Helen";
 import { Bic, BicSuccess } from "./Bic";
 import { Idle, IdleSuccess } from "./Idle";
 import { Planning, PlanningSuccess } from "./Planning";
+import { Tracings, TracingsSuccess } from './Tracings';
 
 const drawerWidth = 240;
 
@@ -25,7 +26,8 @@ export const App = () => {
     { text: "Idle Cost Calculator", link: "idle" },
     { text: "Helen 6417R1 File", link: "helen" },
     { text: "BIC Form Packer", link: "bic" },
-    { text: "Heber Planning Function", link: "planning" }
+    { text: "Heber Planning Function", link: "planning" },
+    { text: "Sales Trace by Item", link: "tracings" },
   ];
 
   return (
@@ -74,6 +76,8 @@ export const App = () => {
           <BicSuccess path="bic_success" />
           <Planning path="planning" />
           <PlanningSuccess path="planning_success" />
+          <Tracings path="tracings" />
+          <TracingsSuccess path="tracings_success" />
         </Router>
       </main>
     </div>

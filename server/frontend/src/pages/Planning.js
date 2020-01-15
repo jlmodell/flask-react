@@ -4,6 +4,8 @@ import { TextField } from "@material-ui/core";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { makeStyles } from "@material-ui/core/styles";
 import axios from "axios";
+import pictureA from '../imgs/planning.so.cust.kit.PNG';
+import pictureB from '../imgs/planning.so.cust.kit.2.PNG';
 
 export const Planning = () => {
   const classes = useStyles();
@@ -90,6 +92,11 @@ export const Planning = () => {
 
         <div style={spacer} />
       </form>
+      <div style={spacer} />
+      <img src={pictureA} alt=""/>
+      <div style={spacer} />
+      <img src={pictureB} alt=""/>
+      <div style={spacer} />
     </div>
   );
 };

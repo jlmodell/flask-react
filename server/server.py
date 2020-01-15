@@ -1,24 +1,28 @@
+from helperfuncs import helen_file, bic, bic_updater, idle, planning, email_file, tracings
 import os
 import sys
+from redis import Redis
+from rq import Queue
+from rq.job import Job
 from flask import Flask, render_template, send_from_directory, request, jsonify
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
 import pandas as pd
 from dotenv import load_dotenv
+import threading
 import datetime
-from helen import helen_file
-from bic import bic, bic_updater
-from planning import planning
-from idle import idle
+
+sem = threading.Semaphore()
 
 load_dotenv(os.path.join(os.getcwd(), ".env"))
 
 port = 5000 if sys.argv[1] == "dev" else 3636
+path_to_upload = os.path.join(os.getcwd(), "uploads")
 
 app = Flask(__name__, static_folder="./frontend/build",
             template_folder="./frontend/build")
 
-path_to_upload = os.path.join(os.getcwd(), "uploads")
+# import helper functions after app is created
 
 app.config['UPLOAD_FOLDER'] = path_to_upload
 
@@ -40,15 +44,15 @@ Helper BEGIN
 """
 
 month_dict = {
-    "1": "January",
-    "2": "February",
-    "3": "March",
-    "4": "April",
-    "5": "May",
-    "6": "June",
-    "7": "July",
-    "8": "August",
-    "9": "September",
+    "01": "January",
+    "02": "February",
+    "03": "March",
+    "04": "April",
+    "05": "May",
+    "06": "June",
+    "07": "July",
+    "08": "August",
+    "09": "September",
     "10": "October",
     "11": "November",
     "12": "December"
@@ -76,33 +80,36 @@ def serve(path):
 @app.route("/api/helen_file", methods=["GET", "POST"])
 def api_helen_file():
     if request.method == "POST":
+
+        sem.acquire()
+
         _ = request.form['date']
         year, month, __ = str(_).split("-")
         sheet_name = f"{month_dict[month]} {year}"
 
-        file = request.files['file']
-        file_name = secure_filename(file.filename)
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"], file_name))
+        if "file" in request.files:
+            file = request.files['file']
+            file_name = secure_filename(file.filename)
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], file_name))
 
         excel_filename = secure_filename(f"6417R1 {sheet_name}.xlsx")
 
-        _ = os.path.join(app.config["UPLOAD_FOLDER"], file_name)
+        if "file" in request.files:
+            _ = os.path.join(app.config["UPLOAD_FOLDER"], file_name)
+        else:
+            _ = os.path.join(r"//busse1/fs1/data", "MGM.xls")
 
-        o = helen_file(_, sheet_name)
+        emails = ""
 
-        if request.form['email']:
-            msg = Message(excel_filename.split(
-                ".")[0], recipients=request.form['email'].split(","))
+        if "email" in request.form:
+            emails = request.form['email']
 
-            msg.html = o.to_html()
+        helen_file(_, sheet_name,
+                   app.config['UPLOAD_FOLDER'], excel_filename, emails)
 
-            with app.open_resource(os.path.join(app.config['UPLOAD_FOLDER'], excel_filename)) as fp:
-                msg.attach(excel_filename,
-                           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', fp.read())
+        sem.release()
 
-            mail.send(msg)
-
-        return jsonify({"result":  excel_filename})
+        return jsonify({"result": excel_filename})
 
     return jsonify({"result": "api_helen_file_as_GET"})
 
@@ -115,8 +122,11 @@ def api_bic():
     timestamp = bic_today.strftime("%Y%m%d%H%M%S")
 
     if request.method == "POST":
+        sem.acquire()
+
         date = request.form['date']
         date = str(date).replace("-", "")
+
         po = request.form['po']
 
         file = request.files['file']
@@ -126,33 +136,37 @@ def api_bic():
         path_to_excel = os.path.join(
             app.config['UPLOAD_FOLDER'], file_name)
 
-        """ various file names """
-
-        bic_today = datetime.datetime.now()
-        timestamp = bic_today.strftime("%Y%m%d%H%M%S")
+        unencrypted_path = secure_filename(os.path.join(
+            app.config['UPLOAD_FOLDER'], f"unencrypted {file_name}"
+        ))
 
         """ Logic Check to see if updating file or creating a new file """
         if 'bicFile' in request.files:
             bicFile = request.files['bicFile']
             bic_file_name = secure_filename("updated " + bicFile.filename)
+
             bic_path_to_excel = os.path.join(
                 app.config['UPLOAD_FOLDER'], bic_file_name)
+
             excel_filename = secure_filename(
                 f"E{po} updated BIC {date} {timestamp}.xlsm")
+
             save_path = os.path.join(
                 app.config["UPLOAD_FOLDER"], excel_filename)
 
             bicFile.save(bic_path_to_excel)
 
-            df = bic_updater(po, bic_path_to_excel, path_to_excel, save_path)
+            df = bic_updater(po, bic_path_to_excel,
+                             path_to_excel, save_path, unencrypted_path)
 
         else:
             excel_filename = secure_filename(
                 f"E{po} BIC {date} {timestamp}.xlsm")
+
             save_path = os.path.join(
                 app.config["UPLOAD_FOLDER"], excel_filename)
 
-            df = bic(po, path_to_excel, save_path)
+            df = bic(po, path_to_excel, unencrypted_path, save_path)
 
         if request.form['email']:
             msg = Message(excel_filename.split(
@@ -162,11 +176,11 @@ def api_bic():
             with app.open_resource(save_path) as fp:
                 msg.attach(
                     excel_filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', fp.read())
-
                 mail.send(msg)
 
-        return jsonify({"result":  excel_filename})
+        sem.release()
 
+        return jsonify({"result":  excel_filename})
     return jsonify({"result": "api_bic_as_GET"})
 
 
@@ -178,6 +192,8 @@ Planning So Cust Kit shaping for Heber Menjivar
 @app.route("/api/planning", methods=["GET", "POST"])
 def api_planning():
     if request.method == "POST":
+        sem.acquire()
+
         if request.files['file']:
             file = request.files['file']
             file_name = secure_filename(file.filename)
@@ -207,6 +223,8 @@ def api_planning():
 
                 mail.send(msg)
 
+        sem.release()
+
         return jsonify({"result": excel_filename, "html": df.to_html()})
     return jsonify({"result": "api_planning_as_GET"})
 
@@ -219,6 +237,8 @@ Idle Report
 @app.route("/api/idle", methods=["GET", "POST"])
 def api_idle():
     if request.method == "POST":
+        sem.acquire()
+
         if 'file' in request.files:
             file = request.files['file']
             file_name = secure_filename(file.filename)
@@ -251,9 +271,39 @@ def api_idle():
 
                 mail.send(msg)
 
+        sem.release()
+
         return jsonify({"result": excel_filename, "html": df.to_html(), "sum_idle": sumOfIdleCost, "proj_annual": projAnnualCost})
 
     return jsonify({"result": "api_idle_as_GET"})
+
+
+"""
+Tracings for Ray
+"""
+
+
+@app.route("/api/tracings", methods=["GET", "POST"])
+def api_tracings():
+    if request.method == "POST":
+        sem.acquire()
+
+        item = request.form['item']
+        months = request.form['months'].split(',')
+        excel_filename = secure_filename(
+            f'{item} Trace {datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.xlsx')
+
+        if request.form['email']:
+            emails = request.form['email']
+        else:
+            emails = ''
+
+        df = tracings(months, item, excel_filename, emails)
+
+        sem.release()
+
+        return jsonify({"result": excel_filename, "html": df.to_html()})
+    return jsonify({"result": "api_tracings_as_GET"})
 
 
 """

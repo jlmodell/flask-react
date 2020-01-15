@@ -1,13 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { navigate } from "@reach/router";
 import { TextField } from "@material-ui/core";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import { makeStyles } from "@material-ui/core/styles";
 import axios from "axios";
 
 export const HelenFile = () => {
-  const [date, setDate] = useState("2019-10-31");
+  const classes = useStyles();
+  const [date, setDate] = useState(new Date());
+  const [loading, setLoading] = useState(false);
   const [file, setFile] = useState("");
   const [email, setEmail] = useState("");
   const [fname, setFname] = useState("");
+  // const [job, setJob] = useState("");
 
   useEffect(() => {
     if (fname) {
@@ -17,6 +22,7 @@ export const HelenFile = () => {
 
   const handleSubmit = async e => {
     e.preventDefault();
+    setLoading(true);
 
     let formData = new FormData();
 
@@ -36,8 +42,11 @@ export const HelenFile = () => {
       // let response = await axios.get("/api/helen_file");
       let response = await axios.post("api/helen_file", formData, config);
       setFname(response.data.result);
+      // setJob(response.data.job_key);
+      setLoading(false);
     } catch (err) {
       console.log(err);
+      setLoading(false);
     }
   };
 
@@ -89,7 +98,13 @@ export const HelenFile = () => {
           InputLabelProps={{ shrink: true }}
         />
         <div style={spacer}></div>
-        <TextField type="submit" fullWidth variant="outlined" />
+        {loading ? (
+          <div className={classes.root}>
+            <CircularProgress size={60} />
+          </div>
+        ) : (
+            <TextField type="submit" fullWidth variant="outlined" />
+          )}
       </form>
     </div>
   );
@@ -97,8 +112,34 @@ export const HelenFile = () => {
 
 export const HelenSuccess = props => {
   const file_ext = useRef();
+  // const [queued, setQeueued] = useState(true);
+  const [filename] = useState(props.location.state.filename || "text.xlsx")
+  // const [jobKey, setJobKey] = useState(props.location.state.jobKey || "job.key")
 
-  let filename = props.location.state.filename || "test.xlsx";
+  // let filename = props.location.state.filename || "test.xlsx";
+  // let jobKey = props.location.state.jobKey || "job key"
+
+  // useEffect(() => {
+  //   if (queued) {
+  //     let response = axios.get("results/" + jobKey)
+  //     if (response.status == 200) {
+  //       setQeueued(false)
+  //       setFilename(response.data.filename)
+  //     } else {
+  //       setJobKey(response.data.taskid)
+  //     }
+
+  //   }
+  // }, [])
+
+  // const handleButtonClick = async () => {
+  //   let response = await axios.get("results/" + jobKey)
+  //   if (response.status == 200) {
+  //     setQeueued(false)
+  //   } else {
+  //     setJobKey(response.data.taskid)
+  //   }
+  // }
 
   const download = async () => {
     let responseType = {
@@ -119,8 +160,20 @@ export const HelenSuccess = props => {
     }
   };
 
-  return (
-    <div style={container}>
+  // let queue_message = (
+  //   <>
+  //     <h1>Result</h1>
+  //     <div>
+  //       <p>
+  //         {jobKey} is still being processed.
+  //         <button onClick={handleButtonClick}>Update</button>
+  //       </p>
+  //     </div>
+  //   </>
+  // )
+
+  let success_message = (
+    <>
       <h1>Success {filename}</h1>
       <div>
         <p>
@@ -131,6 +184,13 @@ export const HelenSuccess = props => {
           <button onClick={download}>{filename}</button>
         </p>
       </div>
+    </>
+  )
+
+  return (
+    <div style={container}>
+      {/* {queued && queue_message} */}
+      {success_message}
     </div>
   );
 };
@@ -154,3 +214,12 @@ const spacer = {
   marginTop: "1rem",
   marginBottom: "1rem"
 };
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    display: "flex",
+    "& > * + *": {
+      marginLeft: theme.spacing(2)
+    }
+  }
+}));
