@@ -62,7 +62,7 @@ python-dotenv==0.10.3
 pytz==2019.1
 pywin32==224
 pywin32-ctypes==0.2.0
-PyYAML==5.1.2
+PyYAML==5.4
 requests==2.22.0
 Rx==1.6.1
 sentinels==1.0.0
