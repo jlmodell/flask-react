@@ -39,7 +39,7 @@ lazy-object-proxy==1.4.1
 macholib==1.11
 Markdown==3.1.1
 MarkupSafe==1.1.1
-numpy==1.16.4
+numpy==1.22.0
 openpyxl==2.6.2
 packaging==19.1
 pandas==0.24.2
